@@ -2,6 +2,7 @@
 using EmployeeManagementApi.Data;
 using EmployeeManagementApi.Models;
 using EmployeeManagementApi.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ namespace EmployeeManagementApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class EmployeesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -23,6 +25,7 @@ public class EmployeesController : ControllerBase
     }
 
     // GET: api/employees
+    // Both Admin and NormalUser can view employees
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<Employee>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
@@ -35,6 +38,7 @@ public class EmployeesController : ControllerBase
     }
 
     // GET: api/employees/{id}
+    // Both Admin and NormalUser can view an employee
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(Employee), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -54,7 +58,9 @@ public class EmployeesController : ControllerBase
     }
 
     // POST: api/employees
+    // Only Admin can add employees
     [HttpPost]
+    [Authorize(Roles = UserRoles.Admin)]
     [ProducesResponseType(typeof(Employee), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Employee>> AddEmployee(
@@ -64,7 +70,6 @@ public class EmployeesController : ControllerBase
             "Adding a new employee: {Name}",
             employeeDto.Name);
 
-        // Check whether the email already exists
         var emailExists = await _context.Employees
             .AnyAsync(e => e.Email == employeeDto.Email);
 
@@ -78,7 +83,6 @@ public class EmployeesController : ControllerBase
                 "An employee with this email already exists.");
         }
 
-        // Convert DTO to Employee Model
         var employee = new Employee
         {
             Name = employeeDto.Name,
@@ -98,7 +102,9 @@ public class EmployeesController : ControllerBase
     }
 
     // PUT: api/employees/{id}
+    // Only Admin can update employees
     [HttpPut("{id}")]
+    [Authorize(Roles = UserRoles.Admin)]
     [ProducesResponseType(typeof(Employee), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -115,7 +121,6 @@ public class EmployeesController : ControllerBase
             return NotFound();
         }
 
-        // Check whether another employee is using this email
         var emailExists = await _context.Employees
             .AnyAsync(e => e.Email == updatedEmployee.Email && e.Id != id);
 
@@ -129,7 +134,6 @@ public class EmployeesController : ControllerBase
                 "This email is already used by another employee.");
         }
 
-        // Update employee details using DTO
         employee.Name = updatedEmployee.Name;
         employee.Email = updatedEmployee.Email;
         employee.Department = updatedEmployee.Department;
@@ -144,7 +148,9 @@ public class EmployeesController : ControllerBase
     }
 
     // DELETE: api/employees/{id}
+    // Only Admin can delete employees
     [HttpDelete("{id}")]
+    [Authorize(Roles = UserRoles.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEmployee(int id)

@@ -29,6 +29,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: "${JWT_SECRET}"
+      AdminUser__Email: "${ADMIN_EMAIL}"
+      AdminUser__Password: "${ADMIN_PASSWORD}"
     depends_on:
       postgres:
         condition: service_healthy

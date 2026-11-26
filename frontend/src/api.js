@@ -1,58 +1,92 @@
 
-const API_URL = 'http://localhost:8080/api/employees';
+const API_URL = 'http://localhost:8080/api';
 
-export async function getEmployees() {
-  const response = await fetch(API_URL);
+function getAuthHeaders() {
+  const token = localStorage.getItem('accessToken');
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch employees');
-  }
-
-  return await response.json();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && {
+      Authorization: `Bearer ${token}`
+    })
+  };
 }
 
-export async function createEmployee(employee) {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(employee)
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to create employee');
-  }
-
-  return await response.json();
-}
-
-export async function updateEmployee(id, employee) {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(employee)
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update employee');
-  }
-
+async function handleResponse(response) {
   if (response.status === 204) {
     return null;
   }
 
-  return await response.json();
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(text || `Request failed: ${response.status}`);
+  }
+
+  return text ? JSON.parse(text) : null;
+}
+
+// Authentication
+
+export async function registerUser(user) {
+  const response = await fetch(`${API_URL}/Auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(user)
+  });
+
+  return handleResponse(response);
+}
+
+export async function loginUser(credentials) {
+  const response = await fetch(`${API_URL}/Auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(credentials)
+  });
+
+  return handleResponse(response);
+}
+
+// Employee Management
+
+export async function getEmployees() {
+  const response = await fetch(`${API_URL}/Employees`, {
+    headers: getAuthHeaders()
+  });
+
+  return handleResponse(response);
+}
+
+export async function createEmployee(employee) {
+  const response = await fetch(`${API_URL}/Employees`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(employee)
+  });
+
+  return handleResponse(response);
+}
+
+export async function updateEmployee(id, employee) {
+  const response = await fetch(`${API_URL}/Employees/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(employee)
+  });
+
+  return handleResponse(response);
 }
 
 export async function deleteEmployee(id) {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'DELETE'
+  const response = await fetch(`${API_URL}/Employees/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to delete employee');
-  }
+  return handleResponse(response);
 }
